@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Notion Link Copier",
+  "version": "1.0.0",
+  "description": "Notionのページタイトルとリンクをコピーし、Slackにリンク付きタイトルとして貼り付けられるようにします",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.notion.so/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
