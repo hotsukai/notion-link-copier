@@ -1,19 +1,29 @@
 (() => {
-  const BUTTON_CLASS = "notion-link-copier-btn";
+  const BUTTON_ID = "notion-link-copier-btn";
 
-  function isSidepeekTitle(titleEl) {
-    // サイドピーク内のタイトルかどうかを判定
-    return titleEl.closest(".notion-peek-renderer") !== null;
+  function getActiveTitle() {
+    // サイドピークが開いていればそのタイトルを優先
+    const sidepeekTitle = document.querySelector(
+      '.notion-peek-renderer h1[aria-roledescription="ページタイトル"]'
+    );
+    if (sidepeekTitle) return { title: sidepeekTitle.textContent.trim(), isSidepeek: true };
+
+    // メインページのタイトル
+    const mainTitle = document.querySelector(
+      'h1[aria-roledescription="ページタイトル"]'
+    );
+    if (mainTitle) return { title: mainTitle.textContent.trim(), isSidepeek: false };
+
+    // フォールバック
+    return { title: document.title.replace(/\s*[-–]\s*Notion$/, "").trim(), isSidepeek: false };
   }
 
   function getPageUrl(isSidepeek) {
     const url = new URL(window.location.href);
     const sidepeekId = url.searchParams.get("p");
     if (isSidepeek && sidepeekId) {
-      // サイドピークのボタン → サイドピークページのURL
       return `${url.origin}/${sidepeekId}`;
     }
-    // 親ページのボタン → クエリパラメータを除いたURL
     return `${url.origin}${url.pathname}`;
   }
 
@@ -35,10 +45,10 @@
   function showFeedback(button, success) {
     const original = button.innerHTML;
     if (success) {
-      button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
       button.classList.add("copied");
     } else {
-      button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
       button.classList.add("error");
     }
     setTimeout(() => {
@@ -47,27 +57,17 @@
     }, 1500);
   }
 
-  const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-
-  function createCopyButton(titleEl) {
-    // 直後の兄弟要素がすでにボタンならスキップ
-    if (
-      titleEl.nextElementSibling &&
-      titleEl.nextElementSibling.classList.contains(BUTTON_CLASS)
-    ) {
-      return;
-    }
+  function createCopyButton() {
+    if (document.getElementById(BUTTON_ID)) return;
 
     const button = document.createElement("button");
-    button.className = BUTTON_CLASS;
+    button.id = BUTTON_ID;
     button.title = "ページタイトルとリンクをコピー";
-    button.innerHTML = COPY_ICON;
+    button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
-    button.addEventListener("click", async (e) => {
-      e.stopPropagation();
+    button.addEventListener("click", async () => {
       try {
-        const title = titleEl.textContent.trim();
-        const isSidepeek = isSidepeekTitle(titleEl);
+        const { title, isSidepeek } = getActiveTitle();
         const url = getPageUrl(isSidepeek);
         await copyAsRichText(title, url);
         showFeedback(button, true);
@@ -77,30 +77,11 @@
       }
     });
 
-    titleEl.after(button);
+    document.body.appendChild(button);
   }
 
-  function attachButtons() {
-    const titles = document.querySelectorAll(
-      'h1[aria-roledescription="ページタイトル"]'
-    );
-    titles.forEach((titleEl) => createCopyButton(titleEl));
-  }
-
-  // Notionはクライアントサイドルーティングのため、DOM変更を監視
-  // debounceで高頻度呼び出しを抑制
-  let debounceTimer = null;
   function init() {
-    attachButtons();
-
-    const observer = new MutationObserver(() => {
-      if (debounceTimer) return;
-      debounceTimer = setTimeout(() => {
-        debounceTimer = null;
-        attachButtons();
-      }, 500);
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    createCopyButton();
   }
 
   if (document.readyState === "loading") {
