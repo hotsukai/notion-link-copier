@@ -1,31 +1,28 @@
-#notion-link-copier-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(55, 53, 47, 0.85);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
+.notion-link-copier-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: background 0.15s, transform 0.15s;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: rgba(55, 53, 47, 0.35);
+  cursor: pointer;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
 }
 
-#notion-link-copier-btn:hover {
-  background: rgba(55, 53, 47, 1);
-  transform: scale(1.1);
+.notion-link-copier-btn:hover {
+  background: rgba(55, 53, 47, 0.08);
+  color: rgba(55, 53, 47, 0.65);
 }
 
-#notion-link-copier-btn.copied {
-  background: #2ecc71;
+.notion-link-copier-btn.copied {
+  color: #2ecc71;
 }
 
-#notion-link-copier-btn.error {
-  background: #e74c3c;
+.notion-link-copier-btn.error {
+  color: #e74c3c;
 }

@@ -1,24 +1,10 @@
 (() => {
-  const BUTTON_ID = "notion-link-copier-btn";
-
-  function getPageTitle() {
-    // Notionのページタイトルは h1 要素から取得
-    const titleEl =
-      document.querySelector(".notion-page-block h1") ||
-      document.querySelector('[placeholder="Untitled"]') ||
-      document.querySelector("h1");
-    if (titleEl) {
-      return titleEl.textContent.trim();
-    }
-    // フォールバック: ドキュメントタイトルから " - Notion" を除去
-    return document.title.replace(/\s*[-–]\s*Notion$/, "").trim();
-  }
+  const BUTTON_CLASS = "notion-link-copier-btn";
 
   function getPageUrl() {
     const url = new URL(window.location.href);
     const sidepeekId = url.searchParams.get("p");
     if (sidepeekId) {
-      // サイドピークが開いている場合、サイドピークページの直接URLを返す
       return `${url.origin}/${sidepeekId}`;
     }
     return window.location.href;
@@ -42,10 +28,10 @@
   function showFeedback(button, success) {
     const original = button.innerHTML;
     if (success) {
-      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
       button.classList.add("copied");
     } else {
-      button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+      button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
       button.classList.add("error");
     }
     setTimeout(() => {
@@ -54,17 +40,19 @@
     }, 1500);
   }
 
-  function createCopyButton() {
-    if (document.getElementById(BUTTON_ID)) return;
+  function createCopyButton(titleEl) {
+    // 既にボタンが隣にある場合はスキップ
+    if (titleEl.parentElement.querySelector(`.${BUTTON_CLASS}`)) return;
 
     const button = document.createElement("button");
-    button.id = BUTTON_ID;
+    button.className = BUTTON_CLASS;
     button.title = "ページタイトルとリンクをコピー";
-    button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", async (e) => {
+      e.stopPropagation();
       try {
-        const title = getPageTitle();
+        const title = titleEl.textContent.trim();
         const url = getPageUrl();
         await copyAsRichText(title, url);
         showFeedback(button, true);
@@ -74,15 +62,27 @@
       }
     });
 
-    document.body.appendChild(button);
+    // タイトル要素の直後に挿入
+    titleEl.after(button);
   }
 
-  // Notionはクライアントサイドルーティングのため、ページ遷移を監視
+  function attachButtons() {
+    const titles = document.querySelectorAll(
+      'h1[aria-roledescription="ページタイトル"]'
+    );
+    titles.forEach((titleEl) => createCopyButton(titleEl));
+  }
+
+  // Notionはクライアントサイドルーティングのため、DOM変更を監視
   function init() {
-    createCopyButton();
+    attachButtons();
+
+    const observer = new MutationObserver(() => {
+      attachButtons();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  // DOM準備後に初期化
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
