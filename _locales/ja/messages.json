@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "Notion Link Copier"
+  },
+  "extensionDescription": {
+    "message": "Notionのページタイトルとリンクをコピー。Slackにリンク付きタイトルとして貼り付けできます。"
+  }
+}

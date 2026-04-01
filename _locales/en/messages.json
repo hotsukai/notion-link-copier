@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "Notion Link Copier"
+  },
+  "extensionDescription": {
+    "message": "Copy Notion page title with link. Paste into Slack as a clickable linked title."
+  }
+}
