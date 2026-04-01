@@ -74,11 +74,17 @@
   }
 
   // Notionはクライアントサイドルーティングのため、DOM変更を監視
+  // debounceで高頻度呼び出しを抑制
+  let debounceTimer = null;
   function init() {
     attachButtons();
 
     const observer = new MutationObserver(() => {
-      attachButtons();
+      if (debounceTimer) return;
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        attachButtons();
+      }, 500);
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
