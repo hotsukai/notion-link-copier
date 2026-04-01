@@ -15,6 +15,12 @@
   }
 
   function getPageUrl() {
+    const url = new URL(window.location.href);
+    const sidepeekId = url.searchParams.get("p");
+    if (sidepeekId) {
+      // サイドピークが開いている場合、サイドピークページの直接URLを返す
+      return `${url.origin}/${sidepeekId}`;
+    }
     return window.location.href;
   }
 
