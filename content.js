@@ -1,13 +1,20 @@
 (() => {
   const BUTTON_CLASS = "notion-link-copier-btn";
 
-  function getPageUrl() {
+  function isSidepeekTitle(titleEl) {
+    // サイドピーク内のタイトルかどうかを判定
+    return titleEl.closest(".notion-peek-renderer") !== null;
+  }
+
+  function getPageUrl(isSidepeek) {
     const url = new URL(window.location.href);
     const sidepeekId = url.searchParams.get("p");
-    if (sidepeekId) {
+    if (isSidepeek && sidepeekId) {
+      // サイドピークのボタン → サイドピークページのURL
       return `${url.origin}/${sidepeekId}`;
     }
-    return window.location.href;
+    // 親ページのボタン → クエリパラメータを除いたURL
+    return `${url.origin}${url.pathname}`;
   }
 
   async function copyAsRichText(title, url) {
@@ -40,20 +47,28 @@
     }, 1500);
   }
 
+  const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+
   function createCopyButton(titleEl) {
-    // 既にボタンが隣にある場合はスキップ
-    if (titleEl.parentElement.querySelector(`.${BUTTON_CLASS}`)) return;
+    // 直後の兄弟要素がすでにボタンならスキップ
+    if (
+      titleEl.nextElementSibling &&
+      titleEl.nextElementSibling.classList.contains(BUTTON_CLASS)
+    ) {
+      return;
+    }
 
     const button = document.createElement("button");
     button.className = BUTTON_CLASS;
     button.title = "ページタイトルとリンクをコピー";
-    button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    button.innerHTML = COPY_ICON;
 
     button.addEventListener("click", async (e) => {
       e.stopPropagation();
       try {
         const title = titleEl.textContent.trim();
-        const url = getPageUrl();
+        const isSidepeek = isSidepeekTitle(titleEl);
+        const url = getPageUrl(isSidepeek);
         await copyAsRichText(title, url);
         showFeedback(button, true);
       } catch (err) {
@@ -62,7 +77,6 @@
       }
     });
 
-    // タイトル要素の直後に挿入
     titleEl.after(button);
   }
 
